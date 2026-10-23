@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>EVA 480x480 design frame</title>
+<style>
+  :root{
+    --bg0:#04060D; --bg1:#0B1826; --ink:#F4F8FF; --ink2:#9FB2C6;
+    --cyan:#35E0FF; --teal:#2DF6D0; --violet:#B07CFF;
+    --glass:rgba(255,255,255,.055); --stroke:rgba(255,255,255,.14);
+    --r-card:30px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;width:480px;height:480px;overflow:hidden;background:var(--bg0);
+    font-family:"Avenir Next","Helvetica Neue",-apple-system,"Hiragino Sans GB",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .stage{position:relative;width:480px;height:480px;overflow:hidden;
+    background:
+      radial-gradient(420px 360px at 18% 8%, rgba(40,170,220,.55), transparent 65%),
+      radial-gradient(460px 420px at 92% 62%, rgba(120,70,210,.50), transparent 68%),
+      radial-gradient(420px 300px at 22% 100%, rgba(30,200,190,.30), transparent 70%),
+      linear-gradient(180deg,var(--bg0) 0%, var(--bg1) 100%);
+  }
+  .aurora{position:absolute;border-radius:50%;filter:blur(58px);opacity:.55;pointer-events:none}
+  .a1{width:340px;height:260px;left:-60px;top:30px;background:rgba(50,190,240,.55)}
+  .a2{width:380px;height:320px;right:-90px;top:180px;background:rgba(130,80,220,.50)}
+  .a3{width:320px;height:200px;left:60px;bottom:-40px;background:rgba(30,200,190,.35)}
+  .grain{position:absolute;inset:0;opacity:.05;mix-blend-mode:overlay;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .vignette{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 100% at 50% 45%, transparent 42%, rgba(0,0,6,.62) 100%)}
+
+  /* ---------- top bar ---------- */
+  .top{position:absolute;left:44px;right:36px;top:34px;display:flex;align-items:center;gap:10px;
+    font-size:12px;letter-spacing:3px;color:var(--ink);text-transform:uppercase}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px rgba(45,246,208,.9)}
+  .brand{font-weight:600}
+  .state{margin-left:6px;font-size:10px;font-weight:400;letter-spacing:2px;color:var(--ink2)}
+  .date{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;letter-spacing:2px}
+  .date b{color:var(--cyan);font-weight:600}
+
+  /* ---------- clock & ambient glow ---------- */
+  .clock-glow{display:none;position:absolute;left:24px;top:68px;width:270px;height:148px;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 52%, rgba(80,220,255,.25) 0%, rgba(0,0,20,.42) 56%, transparent 78%);
+    filter:blur(18px)}
+  .clock{position:absolute;left:36px;top:78px;line-height:.82;color:var(--ink);
+    font-family:"DIN Condensed","DIN Alternate","Bebas Neue","Avenir Next Condensed",sans-serif;
+    font-size:170px;font-weight:700;letter-spacing:-3px;
+    text-shadow:0 0 46px rgba(80,220,255,.28), 0 6px 30px rgba(0,0,20,.55)}
+  .clock .colon{position:relative;top:-6px;font-size:150px;opacity:.9}
+
+  /* ---------- weather ---------- */
+  .wx{position:absolute;right:36px;top:88px;text-align:right;color:var(--ink)}
+  .wx .t{font-size:46px;font-weight:500;letter-spacing:-1px}
+  .wx .t i{font-style:normal;color:var(--cyan);font-size:32px;vertical-align:super;margin-left:2px}
+  .wx .d{margin-top:8px;font-size:16px;color:var(--ink2)}
+  .wx .s{margin-top:4px;font-size:13px;color:rgba(159,178,198,.85)}
+
+  /* ---------- glass card ---------- */
+  .glass{position:absolute;left:36px;top:296px;width:408px;height:150px;border-radius:var(--r-card);
+    background:var(--glass);
+    -webkit-backdrop-filter:blur(18px) saturate(130%);
+    backdrop-filter:blur(18px) saturate(130%);
+    border:1px solid var(--stroke);
+    box-shadow:0 24px 48px rgba(0,0,12,.60), inset 0 1px 0 rgba(255,255,255,.16);
+    overflow:hidden}
+  .glass::after{content:"";position:absolute;inset:-40% -60% auto -60%;height:160%;
+    background:linear-gradient(115deg, rgba(255,255,255,.14), rgba(255,255,255,0) 38%);
+    transform:rotate(8deg);pointer-events:none}
+
+  .row{position:absolute;inset:0;display:flex;align-items:center;gap:18px;padding:0 26px}
+  .mic{position:relative;flex:0 0 auto;width:56px;height:56px;border-radius:50%;
+    background:radial-gradient(circle at 34% 28%, #8CF6FF 0%, #2AD4F0 42%, #0C86A8 100%);
+    box-shadow:0 0 26px rgba(53,224,255,.55), inset 0 1px 0 rgba(255,255,255,.5)}
+  .mic svg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:24px;height:26px}
+  .copy .k{font-size:12px;letter-spacing:3px;color:var(--cyan);font-weight:600}
+  .copy .t{margin-top:6px;font-size:23px;color:var(--ink);letter-spacing:.5px}
+  .copy .h{margin-top:10px;font-size:12.5px;color:var(--ink2);letter-spacing:.3px}
+  .wave{margin-left:auto;display:flex;align-items:center;gap:5px}
+  .wave i{display:block;width:4px;border-radius:2px;background:linear-gradient(180deg,#8CF6FF,#22C6E8);
+    opacity:.9}
+  .wave i:nth-child(1){height:10px;opacity:.55}
+  .wave i:nth-child(2){height:22px;opacity:.75}
+  .wave i:nth-child(3){height:34px}
+  .wave i:nth-child(4){height:20px;opacity:.7}
+  .wave i:nth-child(5){height:14px;opacity:.5}
+
+  /* ---------- bottom rail ---------- */
+  .rail{position:absolute;left:36px;right:36px;bottom:16px;display:flex;align-items:center;
+    font-size:10px;letter-spacing:2px;color:rgba(159,178,198,.7);text-transform:uppercase}
+  .rail .line{position:absolute;left:0;right:0;top:-10px;height:1px;background:rgba(255,255,255,.08)}
+  .rail .bat{margin-left:auto;color:rgba(45,246,208,.85);letter-spacing:1px}
+
+  /* ---------- Mode 1: ?mode=bake_bg (仅烘焙背景+毛玻璃卡片底壳+环境柔光，隐藏所有 LVGL 动态前景) ---------- */
+  body.mode-bake_bg [data-lvgl="dynamic"], body.mode-bake_bg .dyn-fg,
+body.bake-bg [data-lvgl="dynamic"], body.bake-bg .dyn-fg{visibility:hidden !important}
+  body.mode-bake_bg .clock-glow{display:block}
+
+  /* ---------- Mode 2: ?shape=circle (圆屏 R=240 安全区内收布局 + 外圆物理裁切遮罩) ---------- */
+  body.shape-circle .stage{
+    border-radius:50%;
+    clip-path:circle(240px at 240px 240px);
+  }
+  body.shape-circle .top{left:124px;right:124px;top:50px;font-size:11px;letter-spacing:2px}
+  body.shape-circle .clock{left:54px;top:98px;font-size:146px}
+  body.shape-circle .clock .colon{font-size:130px}
+  body.shape-circle .wx{right:56px;top:106px}
+  body.shape-circle .wx .t{font-size:40px}
+  body.shape-circle .wx .d{font-size:15px;margin-top:4px}
+  body.shape-circle .wx .s{font-size:12px}
+  body.shape-circle .glass{left:68px;top:268px;width:344px;height:124px;border-radius:36px}
+  body.shape-circle .row{padding:0 22px;gap:14px}
+  body.shape-circle .mic{width:48px;height:48px}
+  body.shape-circle .copy .t{font-size:20px;margin-top:4px}
+  body.shape-circle .copy .h{font-size:11.5px;margin-top:6px}
+  body.shape-circle .rail{left:148px;right:148px;bottom:34px;justify-content:center;gap:12px}
+  body.shape-circle .rail .bat{margin-left:0}
+
+  /* ---------- Debug: ?debug=safe_area (显示圆屏 R=240 物理边界与 R=206 安全区参考线) ---------- */
+  .safe-guide{display:none;position:absolute;inset:0;pointer-events:none;z-index:99}
+  body.debug-safe .safe-guide{display:block}
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="aurora a1"></div><div class="aurora a2"></div><div class="aurora a3"></div>
+    <div class="grain"></div>
+    <div class="clock-glow"></div>
+
+    <div class="top">
+      <span class="dot" id="top-dot"></span>
+      <span class="brand" id="top-brand" data-lvgl="dynamic">EVA</span>
+      <span class="state" id="top-state" data-lvgl="dynamic">ONLINE</span>
+      <span class="date"><b id="top-day" data-lvgl="dynamic">THU</b><span id="top-date" data-lvgl="dynamic">10.22</span></span>
+    </div>
+
+    <div class="clock" id="clock-box" data-lvgl="dynamic"><span id="clock-hh">09</span><span class="colon" id="clock-colon">:</span><span id="clock-mm">41</span></div>
+
+    <div class="wx">
+      <div class="t" id="wx-t-box" data-lvgl="dynamic"><span id="wx-temp">16</span><i id="wx-deg">°</i></div>
+      <div class="d" id="wx-desc" data-lvgl="dynamic">多云</div>
+      <div class="s" id="wx-sub" data-lvgl="dynamic">体感 14° · 湿度 68%</div>
+    </div>
+
+    <div class="glass">
+      <div class="row">
+        <div class="mic" id="mic-orb" data-lvgl="dynamic">
+          <svg viewBox="0 0 24 26" fill="none">
+            <rect x="8" y="1" width="8" height="13" rx="4" fill="#06121C"/>
+            <path d="M4 11.5a8 8 0 0 0 16 0" stroke="#06121C" stroke-width="2" stroke-linecap="round"/>
+            <path d="M12 19.5v4" stroke="#06121C" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="copy">
+          <div class="k" id="copy-k" data-lvgl="dynamic">LISTENING</div>
+          <div class="t" id="copy-t" data-lvgl="dynamic">在听你说…</div>
+          <div class="h" id="copy-h" data-lvgl="dynamic">试着说：把客厅的灯关掉</div>
+        </div>
+        <div class="wave" id="wave-box" data-lvgl="dynamic">
+          <i id="wave-0"></i><i id="wave-1"></i><i id="wave-2"></i><i id="wave-3"></i><i id="wave-4"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="rail">
+      <span class="line"></span>
+      <span id="rail-title" data-lvgl="dynamic">ESP32-S31 · EVA</span>
+      <span class="bat" id="rail-bat" data-lvgl="dynamic">78%</span>
+    </div>
+    <div class="vignette"></div>
+
+    <svg class="safe-guide" viewBox="0 0 480 480">
+      <circle cx="240" cy="240" r="239" fill="none" stroke="#FF5470" stroke-width="2" stroke-dasharray="6 4"/>
+      <circle cx="240" cy="240" r="206" fill="none" stroke="#2DF6D0" stroke-width="1.5" stroke-dasharray="4 4"/>
+    </svg>
+  </div>
+  <script>
+    const params = new URLSearchParams(location.search);
+    if (params.get('mode') === 'bake_bg') document.body.classList.add('mode-bake_bg', 'bake-bg');
+    if (params.get('shape') === 'circle') document.body.classList.add('shape-circle');
+    if (params.get('debug') === 'safe_area') document.body.classList.add('debug-safe');
+  </script>
+</body>
+</html>

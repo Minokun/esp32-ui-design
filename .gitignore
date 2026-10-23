@@ -1,0 +1,13 @@
+# 产物与缓存
+out/
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+node_modules/
+/tmp/
+
+# 本地样例（如需提交示例图，单独放 assets/）
+*.bin
+*.mp4
+*.mov

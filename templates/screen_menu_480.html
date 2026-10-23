@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>EVA · 480x480 Control Menu</title>
+<style>
+  :root {
+    --bg-0: #05070c;
+    --bg-1: #0b1120;
+    --ink-0: #f4f8ff;
+    --ink-1: #9fb2c6;
+    --ink-2: #58697e;
+    --acc-a: #35e0ff;
+    --acc-b: #7b61ff;
+    --acc-c: #2df6d0;
+    --acc-w: #ffb84d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 480px;
+    height: 480px;
+    overflow: hidden;
+    background: #000;
+    font-family: "Avenir Next", "Hiragino Sans GB", "PingFang SC", "Helvetica Neue", system-ui, sans-serif;
+    color: var(--ink-0);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .stage {
+    position: relative;
+    width: 480px;
+    height: 480px;
+    background:
+      radial-gradient(420px 360px at 18% 8%, rgba(40, 170, 220, 0.55), transparent 65%),
+      radial-gradient(460px 420px at 92% 62%, rgba(120, 70, 210, 0.50), transparent 68%),
+      radial-gradient(420px 300px at 22% 100%, rgba(30, 200, 190, 0.30), transparent 70%),
+      linear-gradient(180deg, #04060d 0%, #0b1826 100%);
+    overflow: hidden;
+  }
+
+  .aurora {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .back-pill {
+    position: absolute;
+    left: 28px;
+    top: 22px;
+    width: 108px;
+    height: 34px;
+    border-radius: 17px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.035) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(18px) saturate(130%);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+  }
+  .back-icon {
+    position: absolute;
+    left: 38px;
+    top: 31px;
+    width: 16px;
+    height: 16px;
+  }
+  .back-txt {
+    position: absolute;
+    left: 56px;
+    top: 30px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: var(--ink-0);
+  }
+  .hdr-title {
+    position: absolute;
+    left: 196px;
+    top: 32px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--ink-1);
+  }
+  .hdr-dot {
+    position: absolute;
+    left: 384px;
+    top: 35px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #2df6d0;
+    box-shadow: 0 0 10px #2df6d0;
+  }
+  .hdr-time {
+    position: absolute;
+    left: 398px;
+    top: 29px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--acc-a);
+  }
+
+  /* ---- 2x2 Glass Tiles ---- */
+  .tile {
+    position: absolute;
+    width: 204px;
+    height: 100px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.032) 100%);
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow:
+      0 18px 36px -10px rgba(0, 0, 0, 0.58),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(18px) saturate(130%);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+  }
+  .t0 { left: 28px;  top: 68px; }
+  .t1 { left: 248px; top: 68px; }
+  .t2 { left: 28px;  top: 182px; }
+  .t3 { left: 248px; top: 182px; }
+
+  .t-badge {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .b0 { left: 42px;  top: 96px;  background: radial-gradient(circle at 35% 30%, #8cf6ff, #1ca8c8); box-shadow: 0 0 18px rgba(53,224,255,0.45); }
+  .b1 { left: 262px; top: 96px;  background: radial-gradient(circle at 35% 30%, #b8a4ff, #5b42d6); box-shadow: 0 0 18px rgba(123,97,255,0.45); }
+  .b2 { left: 42px;  top: 210px; background: radial-gradient(circle at 35% 30%, #8effdf, #14a886); box-shadow: 0 0 18px rgba(45,246,208,0.42); }
+  .b3 { left: 262px; top: 210px; background: radial-gradient(circle at 35% 30%, #ffd88a, #d87b18); box-shadow: 0 0 18px rgba(255,184,77,0.42); }
+
+  .t-dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+  }
+  .td0 { left: 210px; top: 82px; background: #2df6d0; box-shadow: 0 0 8px #2df6d0; }
+  .td1 { left: 430px; top: 82px; background: #35e0ff; box-shadow: 0 0 8px #35e0ff; }
+  .td2 { left: 210px; top: 196px; background: #2df6d0; box-shadow: 0 0 8px #2df6d0; }
+  .td3 { left: 430px; top: 196px; background: #ffb84d; box-shadow: 0 0 8px #ffb84d; }
+
+  .t-kicker {
+    position: absolute;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+  .t-title {
+    position: absolute;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink-0);
+  }
+  .t-sub {
+    position: absolute;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  /* ---- Sliders Card ---- */
+  .sliders-card {
+    position: absolute;
+    left: 28px;
+    top: 296px;
+    width: 424px;
+    height: 112px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.095) 0%, rgba(255,255,255,0.030) 100%);
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow:
+      0 20px 42px -12px rgba(0, 0, 0, 0.62),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(18px) saturate(130%);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+  }
+  .sl-lbl {
+    position: absolute;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-1);
+  }
+  .sl-track {
+    position: absolute;
+    left: 118px;
+    width: 264px;
+    height: 10px;
+    border-radius: 5px;
+    background: rgba(6, 12, 22, 0.72);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .sl-fill {
+    position: absolute;
+    left: 118px;
+    height: 10px;
+    border-radius: 5px;
+  }
+  .sl-knob {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    background: #f4f8ff;
+    box-shadow: 0 0 10px rgba(53, 224, 255, 0.65);
+  }
+  .sl-val {
+    position: absolute;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  /* ---- Bottom Dock ---- */
+  .dock-pill {
+    position: absolute;
+    top: 422px;
+    width: 132px;
+    height: 36px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.025) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .dock-pill.active {
+    background: linear-gradient(135deg, rgba(53,224,255,0.24) 0%, rgba(123,97,255,0.18) 100%);
+    border: 1px solid rgba(53, 224, 255, 0.52);
+    box-shadow: 0 0 18px rgba(53, 224, 255, 0.25);
+  }
+  .dp0 { left: 28px; }
+  .dp1 { left: 174px; }
+  .dp2 { left: 320px; }
+
+  .dock-txt {
+    position: absolute;
+    top: 431px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 1px;
+  }
+
+  body.bake-bg .dyn-fg, body.bake-bg [data-lvgl="dynamic"],
+  body.mode-bake_bg .dyn-fg, body.mode-bake_bg [data-lvgl="dynamic"] {
+    display: none !important;
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <!-- 1. Top Header -->
+    <div class="back-pill"></div>
+    <svg class="back-icon" viewBox="0 0 16 16" fill="none">
+      <path d="M10 3.5L5.5 8L10 12.5" stroke="#35E0FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="back-txt dyn-fg">返回表盘</div>
+    <div class="hdr-title dyn-fg">CONTROL</div>
+    <div class="hdr-dot"></div>
+    <div class="hdr-time dyn-fg">09:41</div>
+
+    <!-- 2. 2x2 Glass Tiles -->
+    <div class="tile t0"></div>
+    <div class="t-badge b0">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect x="8" y="2" width="8" height="12" rx="4" fill="#06121C"/>
+        <path d="M5 11a7 7 0 0 0 14 0M12 18v4" stroke="#06121C" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="t-dot td0 dyn-fg"></div>
+    <div class="t-kicker dyn-fg" style="left:98px; top:84px; color:#35E0FF;">VOICE AI</div>
+    <div class="t-title dyn-fg"  style="left:98px; top:102px;">连续对话</div>
+    <div class="t-sub dyn-fg"    style="left:98px; top:132px; color:#2DF6D0;">已开启 · 聆听</div>
+
+    <div class="tile t1"></div>
+    <div class="t-badge b1">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="5" fill="#06121C"/>
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1" stroke="#06121C" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="t-dot td1 dyn-fg"></div>
+    <div class="t-kicker dyn-fg" style="left:318px; top:84px; color:#35E0FF;">LIGHTING</div>
+    <div class="t-title dyn-fg"  style="left:318px; top:102px;">客厅灯光</div>
+    <div class="t-sub dyn-fg"    style="left:318px; top:132px; color:#9FB2C6;">极光 · 80%</div>
+
+    <div class="tile t2"></div>
+    <div class="t-badge b2">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M4 9h11a2.5 2.5 0 1 0-2.5-2.5M3 13h14a2.5 2.5 0 1 1-2.5 2.5M5 17h8" stroke="#06121C" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="t-dot td2 dyn-fg"></div>
+    <div class="t-kicker dyn-fg" style="left:98px; top:198px; color:#2DF6D0;">CLIMATE</div>
+    <div class="t-title dyn-fg"  style="left:98px; top:216px;">全屋恒温</div>
+    <div class="t-sub dyn-fg"    style="left:98px; top:246px; color:#9FB2C6;">24°C · 舒适</div>
+
+    <div class="tile t3"></div>
+    <div class="t-badge b3">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="13" r="7.5" stroke="#06121C" stroke-width="2.2"/>
+        <path d="M12 9v4l2.5 2M9.5 3h5" stroke="#06121C" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="t-dot td3 dyn-fg"></div>
+    <div class="t-kicker dyn-fg" style="left:318px; top:198px; color:#FFB84D;">POMODORO</div>
+    <div class="t-title dyn-fg"  style="left:318px; top:216px;">专注模式</div>
+    <div class="t-sub dyn-fg"    style="left:318px; top:246px; color:#FFB84D;">25:00 · 就绪</div>
+
+    <!-- 3. Sliders Card -->
+    <div class="sliders-card"></div>
+    <svg style="position:absolute; left:44px; top:320px;" width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M11 5L6 9H2v6h4l5 4V5z" fill="#35E0FF"/>
+      <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" stroke="#35E0FF" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div class="sl-lbl dyn-fg" style="left:70px; top:321px;">音量</div>
+    <div class="sl-track" style="top:325px;"></div>
+    <div class="sl-fill dyn-fg" style="top:325px; width:200px; background:linear-gradient(90deg, #35E0FF, #2DF6D0);"></div>
+    <div class="sl-knob dyn-fg" style="left:309px; top:321px;"></div>
+    <div class="sl-val dyn-fg"  style="left:398px; top:321px; color:#F4F8FF;">76%</div>
+
+    <svg style="position:absolute; left:44px; top:366px;" width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="4.5" fill="#2DF6D0"/>
+      <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4" stroke="#2DF6D0" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div class="sl-lbl dyn-fg" style="left:70px; top:367px;">亮度</div>
+    <div class="sl-track" style="top:371px;"></div>
+    <div class="sl-fill dyn-fg" style="top:371px; width:232px; background:linear-gradient(90deg, #35E0FF, #8CF6FF);"></div>
+    <div class="sl-knob dyn-fg" style="left:341px; top:367px;"></div>
+    <div class="sl-val dyn-fg"  style="left:398px; top:367px; color:#35E0FF;">88%</div>
+
+    <!-- 4. Bottom Dock -->
+    <div class="dock-pill dp0"></div>
+    <div class="dock-txt dyn-fg" style="left:66px; color:#9FB2C6;">语音主屏</div>
+
+    <div class="dock-pill dp1 active"></div>
+    <div class="dock-txt dyn-fg" style="left:212px; color:#F4F8FF;">控制菜单</div>
+
+    <div class="dock-pill dp2"></div>
+    <div class="dock-txt dyn-fg" style="left:358px; color:#9FB2C6;">太空表盘</div>
+  </div>
+  <script>
+    if (location.search.includes("mode=bake_bg")) {
+      document.body.classList.add("bake-bg", "mode-bake_bg");
+    }
+  </script>
+</body>
+</html>

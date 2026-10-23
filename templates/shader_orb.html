@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>EVA Procedural Shader Voice Orb VFX</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: transparent;
+  }
+  canvas {
+    display: block;
+  }
+</style>
+</head>
+<body>
+<canvas id="vfx"></canvas>
+<script>
+/**
+ * EVA 深空电影感 — 程序化流体能量球与粒子光环特效生成器 (WebGL2 GLSL + 确定性周期相位)
+ * 严格遵循 style_bible.md 色板：
+ *   bg.base:      #04060D (0.016, 0.024, 0.051)
+ *   accent.cyan:  #35E0FF (0.208, 0.878, 1.000)
+ *   accent.teal:  #2DF6D0 (0.176, 0.965, 0.816)
+ *   accent.violet:#B07CFF (0.690, 0.486, 1.000)
+ *   accent.amber: #FFC857 (1.000, 0.784, 0.341)
+ *
+ * 数学保证 100% 首尾无缝闭环：
+ *   所有噪声、波纹、粒子轨道仅依赖 cos(k * phase) 与 sin(k * phase)，
+ *   其中 phase = 2 * PI * (frame / total_frames)，因此 frame=0 与 frame=total 严格等价。
+ */
+
+const VS_SRC = `#version 300 es
+in vec2 a_pos;
+out vec2 v_uv;
+void main() {
+  v_uv = a_pos * 0.5 + 0.5;
+  gl_Position = vec4(a_pos, 0.0, 1.0);
+}`;
+
+const FS_SRC = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+out vec4 fragColor;
+
+uniform float u_phase;      // 0 .. 2*PI (周期相位)
+uniform int u_state;        // 0: idle, 1: listening, 2: thinking, 3: speaking
+uniform int u_bg_mode;      // 0: transparent alpha, 1: #04060D dark base
+
+const float PI = 3.14159265359;
+const vec3 COL_BG     = vec3(0.016, 0.024, 0.051); // #04060D
+const vec3 COL_CYAN   = vec3(0.208, 0.878, 1.000); // #35E0FF
+const vec3 COL_TEAL   = vec3(0.176, 0.965, 0.816); // #2DF6D0
+const vec3 COL_VIOLET = vec3(0.690, 0.486, 1.000); // #B07CFF
+const vec3 COL_WHITE  = vec3(0.957, 0.973, 1.000); // #F4F8FF
+
+mat2 rot(float a) {
+  float c = cos(a), s = sin(a);
+  return mat2(c, -s, s, c);
+}
+
+// 周期性谐波场（严格对 u_phase 2*PI 周期闭合）
+float harmonicWave(vec2 p, float ph, float freq, float speedMul) {
+  vec2 q = rot(ph * speedMul) * p;
+  float v = 0.0;
+  v += 0.50 * sin(q.x * freq + cos(ph) * 1.6 + sin(q.y * freq - sin(ph) * 1.6));
+  q = rot(1.047) * q;
+  v += 0.30 * cos(q.x * (freq * 1.4) - sin(ph * 2.0) * 1.2 + cos(q.y * (freq * 1.3)));
+  q = rot(1.047) * q;
+  v += 0.20 * sin(q.y * (freq * 2.1) + cos(ph * 3.0) * 0.9);
+  return v;
+}
+
+void main() {
+  vec2 p = (v_uv - 0.5) * 2.0; // -1 .. 1
+  float r = length(p);
+  float ang = atan(p.y, p.x);
+
+  // 4 状态动力学参数
+  float baseRadius = 0.44;
+  float deformAmp = 0.025;
+  float rippleAmp = 0.0;
+  float swirlSpeed = 1.0;
+  vec3 cPrimary = COL_CYAN;
+  vec3 cSecondary = COL_VIOLET;
+  vec3 cCore = COL_TEAL;
+
+  if (u_state == 0) {
+    // IDLE: 深空静谧呼吸，微幅形变，青蓝冷调
+    baseRadius = 0.42 + 0.022 * sin(u_phase);
+    deformAmp = 0.022;
+    swirlSpeed = 1.0;
+    cPrimary = COL_CYAN * 0.88;
+    cSecondary = COL_VIOLET * 0.65;
+    cCore = mix(COL_CYAN, COL_TEAL, 0.4);
+  } else if (u_state == 1) {
+    // LISTENING: 声波向外涟漪 + 敏锐青绿能量环
+    baseRadius = 0.44 + 0.030 * sin(u_phase * 2.0);
+    deformAmp = 0.045;
+    rippleAmp = 1.0;
+    swirlSpeed = 1.0;
+    cPrimary = COL_TEAL;
+    cSecondary = COL_CYAN;
+    cCore = COL_WHITE;
+  } else if (u_state == 2) {
+    // THINKING: 双旋涡紫青流体坍缩与旋转星云
+    baseRadius = 0.41 + 0.018 * cos(u_phase * 2.0);
+    deformAmp = 0.068;
+    swirlSpeed = 2.0;
+    cPrimary = COL_VIOLET;
+    cSecondary = COL_CYAN;
+    cCore = mix(COL_VIOLET, COL_WHITE, 0.65);
+  } else {
+    // SPEAKING: 多频谱律动光带 + 饱满核心辉光
+    baseRadius = 0.46 + 0.042 * sin(u_phase * 2.0) + 0.018 * cos(u_phase * 4.0);
+    deformAmp = 0.055;
+    rippleAmp = 0.65;
+    swirlSpeed = 1.0;
+    cPrimary = COL_CYAN;
+    cSecondary = COL_TEAL;
+    cCore = COL_WHITE;
+  }
+
+  // 1. 流体球边界形变（对角度 ang 和相位 u_phase 均为整数倍周期）
+  float wave1 = sin(ang * 3.0 + u_phase * swirlSpeed) * cos(ang * 2.0 - u_phase);
+  float wave2 = cos(ang * 5.0 - u_phase * 2.0) * 0.5;
+  float field = harmonicWave(p, u_phase, 4.2, swirlSpeed);
+  float dynRadius = baseRadius + deformAmp * (wave1 * 0.65 + wave2 * 0.35 + field * 0.45);
+
+  // 2. 内部流体丝带（Siri Orb 风格多层折叠光谱）
+  vec2 pSwirl = rot(u_phase * 0.5 * swirlSpeed + r * 1.4 * sin(u_phase)) * p;
+  float ribbon1 = exp(-14.0 * abs(sin(pSwirl.x * 4.5 + cos(pSwirl.y * 3.5 + u_phase)) * 0.35 - pSwirl.y * 0.5));
+  float ribbon2 = exp(-16.0 * abs(cos(pSwirl.y * 5.0 - sin(pSwirl.x * 4.0 - u_phase)) * 0.35 + pSwirl.x * 0.5));
+
+  // 3. 球体菲涅尔边缘高光（Rim Light）與柔和内发光
+  float dist = r - dynRadius;
+  float sphereMask = smoothstep(0.03, -0.02, dist);
+  float innerNorm = clamp(r / max(0.001, dynRadius), 0.0, 1.0);
+  float fresnel = pow(innerNorm, 2.6) * sphereMask;
+  float edgeGlow = exp(-26.0 * abs(dist));
+  float outerHalo = exp(-5.2 * max(0.0, dist));
+
+  // 4. 状态专属层：声波涟漪环（Listening / Speaking）与轨道星尘粒子（全部状态）
+  float rippleGlow = 0.0;
+  if (rippleAmp > 0.0) {
+    for (int i = 0; i < 2; i++) {
+      // prog 从 0 到 1 循环，使用 fract(u_phase / (2*PI) + offset) 并对首尾做正弦包络
+      float cyc = fract(u_phase / (2.0 * PI) + float(i) * 0.5);
+      float rRing = baseRadius + 0.04 + cyc * 0.36;
+      float fade = sin(cyc * PI); // cyc=0 和 cyc=1 时均为 0，严格无缝
+      rippleGlow += exp(-42.0 * abs(r - rRing)) * fade * rippleAmp * 0.75;
+    }
+  }
+
+  // 6 颗环绕谐波星尘粒子
+  float particles = 0.0;
+  for (int i = 0; i < 6; i++) {
+    float fi = float(i);
+    float pAng = fi * (2.0 * PI / 6.0) + u_phase * (mod(fi, 2.0) == 0.0 ? 1.0 : -1.0);
+    float pRad = baseRadius + 0.11 + 0.05 * sin(u_phase + fi * 1.7);
+    vec2 pPos = vec2(cos(pAng), sin(pAng)) * pRad;
+    float dP = length(p - pPos);
+    particles += exp(-180.0 * dP * dP) * (0.55 + 0.45 * sin(u_phase * 2.0 + fi));
+  }
+
+  // 5. 颜色合成（左上冷青主光 + 右侧紫光补光 + 核心亮斑）
+  float lightDir = clamp(0.5 + 0.5 * dot(normalize(p + vec2(0.0001)), normalize(vec2(-0.65, -0.65))), 0.0, 1.0);
+  vec3 bodyCol = mix(cSecondary * 0.35, cPrimary * 0.85, lightDir);
+  bodyCol += cPrimary * ribbon1 * 0.65 + cSecondary * ribbon2 * 0.60;
+  bodyCol += cCore * pow(max(0.0, 1.0 - innerNorm * 1.15), 2.2) * 0.55;
+  bodyCol += mix(cSecondary, cPrimary, lightDir) * fresnel * 0.95;
+
+  vec3 glowCol = mix(cSecondary, cPrimary, lightDir) * (edgeGlow * 0.95 + outerHalo * 0.42);
+  glowCol += cPrimary * rippleGlow;
+  glowCol += mix(COL_WHITE, cCore, 0.5) * particles;
+
+  vec3 totalLight = bodyCol * sphereMask + glowCol;
+
+  // 平滑暗角裁剪，保证在 R=0.96 边界处衰减至 0，绝不出现方形硬切边
+  float radialFade = 1.0 - smoothstep(0.76, 0.98, r);
+  totalLight *= radialFade;
+
+  // ACES 近似柔和色调映射，防止高光死白溢出
+  totalLight = totalLight / (1.0 + totalLight * 0.38);
+
+  float alpha = clamp((sphereMask * 0.92 + edgeGlow * 0.85 + outerHalo * 0.48 + rippleGlow * 0.8 + particles) * radialFade, 0.0, 1.0);
+
+  if (u_bg_mode == 1) {
+    vec3 finalRgb = mix(COL_BG, totalLight, alpha);
+    fragColor = vec4(finalRgb, 1.0);
+  } else {
+    fragColor = vec4(totalLight, alpha);
+  }
+}`;
+
+const canvas = document.getElementById('vfx');
+const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: false, antialias: true, preserveDrawingBuffer: true });
+
+function compileShader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    throw new Error(gl.getShaderInfoLog(s));
+  }
+  return s;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, compileShader(gl.VERTEX_SHADER, VS_SRC));
+gl.attachShader(prog, compileShader(gl.FRAGMENT_SHADER, FS_SRC));
+gl.linkProgram(prog);
+gl.useProgram(prog);
+
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+const locPos = gl.getAttribLocation(prog, 'a_pos');
+gl.enableVertexAttribArray(locPos);
+gl.vertexAttribPointer(locPos, 2, gl.FLOAT, false, 0, 0);
+
+const uPhase = gl.getUniformLocation(prog, 'u_phase');
+const uState = gl.getUniformLocation(prog, 'u_state');
+const uBgMode = gl.getUniformLocation(prog, 'u_bg_mode');
+
+const STATE_MAP = { idle: 0, listening: 1, thinking: 2, speaking: 3 };
+
+window.setOrbFrame = function(stateName, frameIdx, totalFrames, sizePx, bgMode) {
+  const sz = sizePx || 240;
+  if (canvas.width !== sz || canvas.height !== sz) {
+    canvas.width = sz;
+    canvas.height = sz;
+    gl.viewport(0, 0, sz, sz);
+  }
+  const st = STATE_MAP[stateName] !== undefined ? STATE_MAP[stateName] : 1;
+  const phase = (2.0 * Math.PI * (frameIdx % totalFrames)) / totalFrames;
+  const bg = (bgMode === 'dark') ? 1 : 0;
+
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform1f(uPhase, phase);
+  gl.uniform1i(uState, st);
+  gl.uniform1i(uBgMode, bg);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  gl.finish();
+};
+
+// 初始化读取 URL 参数
+const params = new URLSearchParams(location.search);
+const initState = params.get('state') || 'listening';
+const initFrame = parseInt(params.get('frame') || '0', 10);
+const initTotal = parseInt(params.get('total') || '24', 10);
+const initSize  = parseInt(params.get('size') || '240', 10);
+const initBg    = params.get('bg') || 'transparent';
+window.setOrbFrame(initState, initFrame, initTotal, initSize, initBg);
+</script>
+</body>
+</html>

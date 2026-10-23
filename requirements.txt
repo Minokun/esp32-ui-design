@@ -1,0 +1,7 @@
+# Python 依赖（技能主链路）
+numpy>=1.24
+Pillow>=10
+
+# 可选：LVGLImage.py 转 A8 图标时需要（也可用 PYTHONPATH=/tmp/pylibs 临时方案）
+pypng>=0.20220715
+lz4>=4.0
