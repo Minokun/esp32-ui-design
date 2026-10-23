@@ -43,6 +43,21 @@ export EVA_PROJECT_ROOT=/path/to/edge_voice_assistant   # 固件工程根目录
 
 ![vfx orb sheet](assets/vfx_orb_sheet.png)
 
+## ASTRO 单页（2026-10-24）
+
+设备上现在只保留一页「ASTRO · 深空宇航员动态特效」：`templates/space_480.html`（圆屏安全区设计）
+→ Chromium 同源烘焙出正常态 / `?mode=bake_bg&warp=1` 跃迁态两张底图
+→ `scripts/bake_space_asset.py` 替换 `eva` 分区的 EVA4 资产（bg0=正常 / bg1=跃迁，88×88 orb 帧沿用）
+→ 固件 `build_spaceman()` 叠 30 帧预旋转宇航员（media 分区 AST0，flash 零拷贝）+ 轨道粒子 + 流星；轻触核心触发 2.6s 跃迁（换 bg1、旋转加速）。
+
+设备实际帧缓冲（240×240 半分辨率导出，上屏为 480×480）：
+
+![ASTRO device page](assets/astro_page_device_fb.png)
+
+设计真值稿：
+
+![ASTRO design](assets/space_480_design.png)
+
 ## 管线
 
 | 阶段 | 工具 | 产物 |

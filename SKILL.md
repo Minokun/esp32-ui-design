@@ -23,6 +23,7 @@ description: ESP32/LVGL 界面美术与 1:1 上屏工作流（无设计师、AI 
 5. **RGB565 必须 8×8 Bayer 有序抖动**，禁止直接截断低位（暗部极光会出水波纹色带）。
 6. **字重必须对齐 CSS**：`bake_to_lvgl.py` 按 `font-weight` 选 Avenir/Hiragino face（300/400/500/600/700）；改字体/字号要同步改 `font_specs()`。
 7. **坐标用差分墨迹框校正**：跑 `compare` 拿 `metrics.json.regions[].dx/dy`，改固件 `lvgl_ui.c` 的 `lv_obj_set_pos`，重跑直到 0 偏移；禁止直接抄 CSS 的 `top/left`（含半行距）。
+8. **动态文案必须落在字体字符表内**：4bpp 字库是子集字体，任意中文回复直接 `lv_label_set_text` 到子集字体的 label 会整行变豆腐块（实测把 WS 原文塞进 23px 标题 = 一整行方框）。状态文案只用固定字表里的串，或改用覆盖面足够的字体。
 
 ## 目录
 
@@ -30,9 +31,10 @@ description: ESP32/LVGL 界面美术与 1:1 上屏工作流（无设计师、AI 
 SKILL.md / style_bible.md / README.md
 templates/screen_480.html        主表盘 480×480 设计真值稿（?mode=bake_bg / ?shape=circle / ?debug=safe_area）
 templates/screen_menu_480.html   控制中心菜单设计真值稿（?mode=bake_bg）
-templates/shader_orb.html        WebGL2 语音球模板（实验性；正式用 NumPy 烘焙器）
+templates/space_480.html         ASTRO 深空宇航员单页（圆屏安全区；?mode=bake_bg&warp=1 出跃迁变体）
 scripts/bake_to_lvgl.py          主入口：build（Chromium 真值/烘焙 + RGB565 + 字库）/ compare（看板+metrics+门禁）
 scripts/host_render.sh           找到宿主项目的 host_render 并渲染真实 LVGL 帧缓冲
+scripts/bake_space_asset.py      EVA4 资产替换示例：新页背景(正常+跃迁)替换进 eva bin，保留 orb 帧
 scripts/bake_layers.py           纯 Python 降级烘焙 + 圆屏设计稿生成
 scripts/render_frame.sh          HTML → 480×480 PNG（Playwright/Chromium；找不到浏览器明确报错）
 scripts/gen_lvgl_font.py         单字体 4bpp 字库生成器
@@ -105,6 +107,7 @@ export EVA_PROJECT_ROOT=/path/to/edge_voice_assistant
 - 模板里加 CSS 动画会导致渲染不确定；烘焙用模板请保持静态。
 - macOS 系统字体只适合本地验证；`/tmp/pylibs`（pypng/lz4）是临时方案，建议项目内 `pip install --target`。
 - `templates/shader_orb.html` + `render_shader_vfx.cjs` 的 WebGL 路径在 headless 下不可用；正式特效走 `render_shader_vfx.py`。
+- 单页替换（例如整机只留 ASTRO 深空页）：改 `templates/space_480.html` → `render_frame.sh` 出正常/跃迁两张烘焙图 → `bake_space_asset.py` 替换 eva bin 的 bg0/bg1（orb 帧沿用）→ 固件只 build 这一页；参考 assets/astro_page_device_fb.png。
 
 ## 安装 / 更新本技能
 

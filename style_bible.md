@@ -124,3 +124,12 @@ neon rainbow, plastic toy, lowres, jpeg artifacts, banding, harsh shadows
 | 运行时脏区 | 9,424 px = 4.09% |
 | 上板门禁 | `bake_to_lvgl.py compare` MAE ≤ 12/255，超限 exit 1 |
 
+
+## 10.5 ASTRO 深空单页（2026-10-24）
+
+- 画布/安全区：480×480，圆屏可见区 R≤232，文字/关键图形放 R≤205；
+- 背景：深空 #02040A→#0A1730 + 蓝/紫星云 + 细星点 + 行星/卫星 + 极淡轨道环（烘焙层，不在 MCU 实时画）；
+- 动态层：30 帧预旋转宇航员（180×180，media 分区零拷贝）+ 88×88 能量球光晕 + 3 轨道粒子 + 3 流星；
+- HUD：DIN 76 数字大时间 + Avenir/Montserrat 14 日期/状态；禁止把任意中文回复塞进子集字体 label；
+- 交互：轻触核心区 → 2.6s 跃迁（bg1 warp 变体 + 旋转/星流加速）；
+- 实测（S31，480×480 RGB565）：渲染循环 ~33ms、~23 fps、refr 8~16ms、copy ~10ms。
